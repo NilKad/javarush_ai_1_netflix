@@ -1,0 +1,2 @@
+- [project-rushflix](project-rushflix.md) — ТЗ лендинга RushFlix: структура, стили, интерактив
+- [tmdb-image-url-format](tmdb-image-url-format.md) — Правильный формат URL для изображений TMDb
