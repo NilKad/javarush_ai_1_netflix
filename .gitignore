@@ -1,0 +1,19 @@
+# Claude Memory & Plans
+.claude/
+memory/
+plans/
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log

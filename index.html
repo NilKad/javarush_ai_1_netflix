@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RushFlix — Дивіться фільми та серіали</title>
+  <style>
+    /* ===== RESET & BASE ===== */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    html {
+      scroll-behavior: smooth;
+    }
+    body {
+      font-family: Helvetica, Arial, sans-serif;
+      background-color: #141414;
+      color: #fff;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+    a {
+      text-decoration: none;
+      color: inherit;
+    }
+    ul {
+      list-style: none;
+    }
+
+    /* ===== VARIABLES ===== */
+    :root {
+      --bg: #141414;
+      --accent: #E50914;
+      --text: #fff;
+      --text-secondary: #b3b3b3;
+      --header-height: 68px;
+      --transition: 0.3s ease;
+    }
+
+    /* ===== HEADER ===== */
+    .header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: var(--header-height);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 60px;
+      z-index: 100;
+      background: transparent;
+      transition: background var(--transition);
+    }
+    .header.scrolled {
+      background: var(--bg);
+    }
+    .header__logo {
+      font-size: 28px;
+      font-weight: 900;
+      color: var(--accent);
+      letter-spacing: 2px;
+      margin-right: 40px;
+      flex-shrink: 0;
+    }
+    .header__nav {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+    }
+    .header__nav a {
+      font-size: 14px;
+      color: var(--text-secondary);
+      transition: color var(--transition);
+      white-space: nowrap;
+    }
+    .header__nav a:hover {
+      color: var(--text);
+    }
+    .header__nav a.active {
+      color: var(--text);
+      font-weight: 600;
+    }
+    .header__right {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+    .header__btn {
+      padding: 8px 18px;
+      border-radius: 4px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid var(--text-secondary);
+      background: transparent;
+      color: var(--text);
+      transition: all var(--transition);
+    }
+    .header__btn:hover {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+
+    /* ===== HERO ===== */
+    .hero {
+      position: relative;
+      height: 80vh;
+      min-height: 400px;
+      display: flex;
+      align-items: flex-end;
+      padding: 120px 60px 80px;
+      overflow: hidden;
+    }
+    .hero__bg {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      z-index: 0;
+    }
+    .hero::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 50%;
+      background: linear-gradient(to top, #141414 0%, transparent 100%);
+      pointer-events: none;
+      z-index: 1;
+    }
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.35);
+      z-index: 1;
+    }
+    .hero__badge {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 3px;
+      color: var(--accent);
+      margin-bottom: 12px;
+    }
+    .hero__title {
+      font-size: clamp(32px, 6vw, 72px);
+      font-weight: 900;
+      line-height: 1.1;
+      max-width: 700px;
+      margin-bottom: 20px;
+    }
+    .hero__desc {
+      font-size: clamp(14px, 1.4vw, 20px);
+      color: var(--text-secondary);
+      max-width: 550px;
+      line-height: 1.5;
+      margin-bottom: 30px;
+    }
+    .hero__btns {
+      display: flex;
+      gap: 16px;
+      position: relative;
+      z-index: 1;
+    }
+    .hero__btns .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 30px;
+      border-radius: 4px;
+      font-size: 18px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: opacity var(--transition);
+    }
+    .hero__btns .btn:hover {
+      opacity: 0.8;
+    }
+    .btn--play {
+      background: #fff;
+      color: #000;
+    }
+    .btn--info {
+      background: rgba(255,255,255,0.15);
+      color: #fff;
+      backdrop-filter: blur(4px);
+    }
+
+    /* ===== CONTENT ROWS ===== */
+    .rows {
+      position: relative;
+      z-index: 1;
+      margin-top: -40px;
+      padding: 0 60px 60px;
+    }
+    .row {
+      margin-bottom: 40px;
+    }
+    .row__title {
+      font-size: clamp(18px, 1.8vw, 26px);
+      font-weight: 700;
+      margin-bottom: 16px;
+    }
+    .row__container {
+      position: relative;
+    }
+    .row__posters {
+      display: flex;
+      gap: 8px;
+      overflow-x: scroll;
+      overflow-y: hidden;
+      scroll-behavior: smooth;
+      padding: 8px 0;
+    }
+    .row__posters::-webkit-scrollbar {
+      display: none;
+    }
+    .row__posters {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    .row__poster {
+      flex-shrink: 0;
+      width: 200px;
+      height: 280px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: transform var(--transition), box-shadow var(--transition);
+      object-fit: cover;
+      display: block;
+    }
+    .row__poster:hover {
+      transform: scale(1.08);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+    }
+    .row__poster-wrapper {
+      flex-shrink: 0;
+      width: 200px;
+      height: 280px;
+      border-radius: 4px;
+      overflow: hidden;
+      transition: transform var(--transition), box-shadow var(--transition);
+    }
+    .row__poster-wrapper:hover {
+      transform: scale(1.08);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+    }
+    .row__poster-wrapper .row__poster {
+      width: 100%;
+      height: 100%;
+      border-radius: 0;
+      transform: none !important;
+      box-shadow: none !important;
+    }
+    .row__arrow {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 50px;
+      background: rgba(20,20,20,0.6);
+      border: none;
+      color: #fff;
+      font-size: 28px;
+      cursor: pointer;
+      z-index: 2;
+      opacity: 0;
+      transition: opacity var(--transition);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .row__container:hover .row__arrow {
+      opacity: 1;
+    }
+    .row__arrow--left {
+      left: 0;
+      border-radius: 4px 0 0 4px;
+    }
+    .row__arrow--right {
+      right: 0;
+      border-radius: 0 4px 4px 0;
+    }
+
+    /* ===== FOOTER ===== */
+    .footer {
+      padding: 60px 60px 30px;
+      color: #808080;
+      font-size: 14px;
+    }
+    .footer__socials {
+      display: flex;
+      gap: 24px;
+      margin-bottom: 30px;
+    }
+    .footer__socials a {
+      display: inline-flex;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: #2a2a2a;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      transition: background var(--transition);
+    }
+    .footer__socials a:hover {
+      background: #404040;
+    }
+    .footer__links {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 30px;
+    }
+    .footer__links a {
+      color: #808080;
+      transition: color var(--transition);
+    }
+    .footer__links a:hover {
+      color: var(--text);
+    }
+    .footer__service-btn {
+      display: inline-block;
+      padding: 6px 14px;
+      border: 1px solid #808080;
+      border-radius: 2px;
+      font-size: 13px;
+      color: #808080;
+      cursor: pointer;
+      background: transparent;
+      margin-bottom: 20px;
+      transition: color var(--transition), border-color var(--transition);
+    }
+    .footer__service-btn:hover {
+      color: var(--text);
+      border-color: var(--text);
+    }
+    .footer__copy {
+      font-size: 12px;
+      color: #555;
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 768px) {
+      .header {
+        padding: 0 20px;
+      }
+      .header__nav {
+        gap: 12px;
+      }
+      .header__nav a {
+        font-size: 12px;
+      }
+      .hero {
+        padding: 100px 20px 60px;
+        min-height: 350px;
+      }
+      .hero__btns .btn {
+        font-size: 14px;
+        padding: 10px 20px;
+      }
+      .rows {
+        padding: 0 20px 40px;
+        margin-top: -20px;
+      }
+      .row__poster {
+        width: 140px;
+        height: 200px;
+      }
+      .footer {
+        padding: 40px 20px 20px;
+      }
+      .footer__links {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 500px) {
+      .header__nav a:not(.active) {
+        display: none;
+      }
+      .row__poster {
+        width: 110px;
+        height: 160px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ===== HEADER ===== -->
+  <header class="header" id="header">
+    <div style="display: flex; align-items: center;">
+      <span class="header__logo">RUSHFLIX</span>
+      <nav class="header__nav">
+        <a href="#" class="active">Головна</a>
+        <a href="#">Серіали</a>
+        <a href="#">Фільми</a>
+        <a href="#">Новинки</a>
+        <a href="#">Мій список</a>
+      </nav>
+    </div>
+    <div class="header__right">
+      <button class="header__btn">Увійти</button>
+    </div>
+  </header>
+
+  <!-- ===== HERO ===== -->
+  <section class="hero">
+    <img class="hero__bg" src="https://image.tmdb.org/t/p/w780/bRBeSHfGHwkEpImlhxPmOcUsaeg.jpg" alt="Фон фільму" loading="lazy">
+    <div style="position: relative; z-index: 2;">
+      <div class="hero__badge">RushFlix Original</div>
+      <h1 class="hero__title">Космічна одіссея: 2069</h1>
+      <p class="hero__desc">
+        Людство відправляє експедицію до меж Сонячної системи.
+        Екіпаж із п'яти астронавтів стикається з феноменом, що змінює
+        уявлення про час і простір.
+      </p>
+      <div class="hero__btns">
+        <button class="btn btn--play">▶ Відтворити</button>
+        <button class="btn btn--info">ℹ Детальніше</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== CONTENT ROWS ===== -->
+  <section class="rows">
+
+    <!-- Row 1 — RushFlix Новинки -->
+    <div class="row">
+      <h2 class="row__title">RushFlix Новинки</h2>
+      <div class="row__container">
+        <button class="row__arrow row__arrow--left">‹</button>
+        <div class="row__posters" data-row="0">
+          <div class="row__poster-wrapper"><img class="row__poster" src="https://image.tmdb.org/t/p/w300/bRwnj8WEKBCvmfeUNOukJPwB43K.jpg" alt="Obsession" loading="lazy"></div>
+          <div class="row__poster-wrapper"><img class="row__poster" src="https://image.tmdb.org/t/p/w300/hwRdDFIhaEmpRgoki805YvyyjZf.jpg" alt="Mortal Kombat II" loading="lazy"></div>
+          <div class="row__poster-wrapper"><img class="row__poster" src="https://image.tmdb.org/t/p/w300/zm0KAbOjlt9eR5y7vDiL2dEOwMl.jpg" alt="Michael" loading="lazy"></div>
+          <div class="row__poster-wrapper"><img class="row__poster" src="https://image.tmdb.org/t/p/w300/4KZXlZ5tTT6ghbW77gS4hSLkCd7.jpg" alt="Karuppu" loading="lazy"></div>
+          <div class="row__poster-wrapper"><img class="row__poster" src="https://image.tmdb.org/t/p/w300/eJGWx219ZcEMVQJhAgMiqo8tYY.jpg" alt="Super Mario Galaxy" loading="lazy"></div>
+          <div class="row__poster-wrapper"><img class="row__poster" src="https://image.tmdb.org/t/p/w300/5Vi8dSauVwH1HOsiZceDMbRr1Ca.jpg" alt="The Mandalorian and Grogu" loading="lazy"></div>
+          <div class="row__poster-wrapper"><img class="row__poster" src="https://image.tmdb.org/t/p/w300/pxG26JdyuiDvJbSoucknaFiLeZD.jpg" alt="Toy Story 5" loading="lazy"></div>
+          <div class="row__poster-wrapper"><img class="row__poster" src="https://image.tmdb.org/t/p/w300/3YMd9Ogae4rDKLWuAZFuse9xhc5.jpg" alt="Masters of the Universe" loading="lazy"></div>
+          <div class="row__poster-wrapper"><img class="row__poster" src="https://image.tmdb.org/t/p/w300/yihdXomYb5kTeSivtFndMy5iDmf.jpg" alt="Project Hail Mary" loading="lazy"></div>
+          <div class="row__poster-wrapper"><img class="row__poster" src="https://image.tmdb.org/t/p/w300/1q308iixueCU4pFtSYugNOevtNx.jpg" alt="Lee Cronin's The Mummy" loading="lazy"></div>
+        </div>
+        <button class="row__arrow row__arrow--right">›</button>
+      </div>
+    </div>
+
+    <!-- Row 2 — У тренді -->
+    <div class="row">
+      <h2 class="row__title">У тренді</h2>
+      <div class="row__container">
+        <button class="row__arrow row__arrow--left">‹</button>
+        <div class="row__posters" data-row="1">
+          <div class="row__poster-wrapper"><img class="row__poster" src="https://image.tmdb.org/t/p/w300/bRBeSHfGHwkEpImlhxPmOcUsaeg.jpg" alt="Avatar: Fire and Ash" loading="lazy"></div>
+          <div class="row__poster-wrapper"><img class="row__poster" src="https://image.tmdb.org/t/p/w300/fWVSwgjpT2D78VUh6X8UBd2rorW.jpg" alt="Demon Slayer" loading="lazy"></div>
+          <div class="row__poster-wrapper"><img class="row__poster" src="https://image.tmdb.org/t/p/w300/8ehYxUh5MWE41AeE9gkHE8DKzvB.jpg" alt="Tom Clancy's Jack Ryan" loading="lazy"></div>
+          <div class="row__poster-wrapper"><img class="row__poster" src="https://image.tmdb.org/t/p/w300/qQclTgLMDvGBuUBFGHRipxkEwWR.jpg" alt="The Punisher: One Last Kill" loading="lazy"></div>
+          <div class="row__poster-wrapper"><img class="row__poster" src="https://image.tmdb.org/t/p/w300/dQgIcW6Th08kMRf2HBoYWoFE6OD.jpg" alt="In the Grey" loading="lazy"></div>
+          <div class="row__poster-wrapper"><img class="row__poster" src="https://image.tmdb.org/t/p/w300/cHKo3m8N1fwvEy2ZEr0xGmmMODV.jpg" alt="The Shadow's Edge" loading="lazy"></div>
+          <div class="row__poster-wrapper"><img class="row__poster" src="https://image.tmdb.org/t/p/w300/rhGx6E3qRNMgj3i5su2oukNHwIQ.jpg" alt="Backrooms" loading="lazy"></div>
+          <div class="row__poster-wrapper"><img class="row__poster" src="https://image.tmdb.org/t/p/w300/xjtWQ2CL1mpmMNwuU5HeS4Iuwuu.jpg" alt="Hoppers" loading="lazy"></div>
+          <div class="row__poster-wrapper"><img class="row__poster" src="https://image.tmdb.org/t/p/w300/4TpBhdaSl5ALHbgeaYOLF8Q3haz.jpg" alt="The Unknown Man" loading="lazy"></div>
+          <div class="row__poster-wrapper"><img class="row__poster" src="https://image.tmdb.org/t/p/w300/3o5YPjDGDTcTDL5ftDA9NwN9dLd.jpg" alt="Disclosure Day" loading="lazy"></div>
+        </div>
+        <button class="row__arrow row__arrow--right">›</button>
+      </div>
+    </div>
+
+    <!-- Row 3 — Популярне -->
+    <div class="row">
+      <h2 class="row__title">Популярне</h2>
+      <div class="row__container">
+        <button class="row__arrow row__arrow--left">‹</button>
+        <div class="row__posters" data-row="2">
+          <div class="row__poster-wrapper"><img class="row__poster" src="https://image.tmdb.org/t/p/w300/7wIBfBl2gejt6xHxNSK0reVIm7E.jpg" alt="Your Heart Will Be Broken" loading="lazy"></div>
+          <div class="row__poster-wrapper"><img class="row__poster" src="https://image.tmdb.org/t/p/w300/3BjLdTWRiHc1ISIZMFvToOmghOM.jpg" alt="Graphic Desires" loading="lazy"></div>
+          <div class="row__poster-wrapper"><img class="row__poster" src="https://image.tmdb.org/t/p/w300/rMgG7cWuq9O6zhhLs2CbqIKVA8V.jpg" alt="Salitan" loading="lazy"></div>
+          <div class="row__poster-wrapper"><img class="row__poster" src="https://image.tmdb.org/t/p/w300/3TrQUHmnEL2tOYf4KKkXb01BQt2.jpg" alt="Bandar" loading="lazy"></div>
+          <div class="row__poster-wrapper"><img class="row__poster" src="https://image.tmdb.org/t/p/w300/ptTwQES14pr5c3aZvJg56YlYgb1.jpg" alt="Dhurandhar" loading="lazy"></div>
+          <div class="row__poster-wrapper"><img class="row__poster" src="https://image.tmdb.org/t/p/w300/nLxu237EJAisFCYKK48hN9Plobx.jpg" alt="Your Fault: London" loading="lazy"></div>
+          <div class="row__poster-wrapper"><img class="row__poster" src="https://image.tmdb.org/t/p/w300/1HRUTqEVDmJC4L6tp6zd85MI6uH.jpg" alt="Office Romance" loading="lazy"></div>
+          <div class="row__poster-wrapper"><img class="row__poster" src="https://image.tmdb.org/t/p/w300/8n7OeeyAqwmGS81Is2c6Ho65tgW.jpg" alt="Main Vaapas Aaunga" loading="lazy"></div>
+          <div class="row__poster-wrapper"><img class="row__poster" src="https://image.tmdb.org/t/p/w300/tHhxWxge06goXU6ZQH1hj7vK8Hd.jpg" alt="Swapped" loading="lazy"></div>
+          <div class="row__poster-wrapper"><img class="row__poster" src="https://image.tmdb.org/t/p/w300/uJOW6pWxJ0i5sji9VXRR6Y1wXyE.jpg" alt="Chum" loading="lazy"></div>
+        </div>
+        <button class="row__arrow row__arrow--right">›</button>
+      </div>
+    </div>
+
+    <!-- Row 4 — Продовжити перегляд -->
+    <div class="row">
+      <h2 class="row__title">Продовжити перегляд</h2>
+      <div class="row__container">
+        <button class="row__arrow row__arrow--left">‹</button>
+        <div class="row__posters" data-row="3">
+          <div class="row__poster-wrapper"><img class="row__poster" src="https://image.tmdb.org/t/p/w300/79RBp8afL4u4z3nVGR78z6eIvBB.jpg" alt="Bhooth Bangla" loading="lazy"></div>
+          <div class="row__poster-wrapper"><img class="row__poster" src="https://image.tmdb.org/t/p/w300/tSmAFNckiqcKg7aFgjCFnhNqNbP.jpg" alt="Haunted 3D" loading="lazy"></div>
+          <div class="row__poster-wrapper"><img class="row__poster" src="https://image.tmdb.org/t/p/w300/fDyjVv5ryBYDiE1sN9mbBbZycBL.jpg" alt="The Summoning of Baby Blue" loading="lazy"></div>
+          <div class="row__poster-wrapper"><img class="row__poster" src="https://image.tmdb.org/t/p/w300/zP19YO60jwEsfKd5Qf1UvA5uJu8.jpg" alt="The Furious" loading="lazy"></div>
+          <div class="row__poster-wrapper"><img class="row__poster" src="https://image.tmdb.org/t/p/w300/kJAJNNBYlbqAcpTDxBNnaILSMTy.jpg" alt="Peddi" loading="lazy"></div>
+        </div>
+        <button class="row__arrow row__arrow--right">›</button>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- ===== FOOTER ===== -->
+  <footer class="footer">
+    <div class="footer__socials">
+      <a href="#" aria-label="Facebook">FB</a>
+      <a href="#" aria-label="Instagram">IG</a>
+      <a href="#" aria-label="Twitter">TW</a>
+      <a href="#" aria-label="YouTube">YT</a>
+    </div>
+    <div class="footer__links">
+      <a href="#">Аудіоопис</a>
+      <a href="#">Довідка</a>
+      <a href="#">Подарункові картки</a>
+      <a href="#">Вакансії</a>
+      <a href="#">Умови використання</a>
+      <a href="#">Конфіденційність</a>
+      <a href="#">Налаштування cookie</a>
+      <a href="#">Контакти</a>
+    </div>
+    <button class="footer__service-btn">Код послуги</button>
+    <p class="footer__copy">© 2026 RushFlix, Inc.</p>
+  </footer>
+
+  <!-- ===== JS ===== -->
+  <script>
+    (function() {
+      // 1. Header background on scroll
+      const header = document.getElementById('header');
+      const onScroll = () => {
+        header.classList.toggle('scrolled', window.scrollY > 50);
+      };
+      window.addEventListener('scroll', onScroll, { passive: true });
+      onScroll(); // initial check
+
+      // 2. Carousel arrows
+      const containers = document.querySelectorAll('.row__container');
+      containers.forEach(container => {
+        const posters = container.querySelector('.row__posters');
+        const leftArrow = container.querySelector('.row__arrow--left');
+        const rightArrow = container.querySelector('.row__arrow--right');
+
+        const scrollAmount = () => {
+          const visible = container.querySelector('.row__poster');
+          return (visible ? visible.offsetWidth + 8 : 0) * 3; // 3 posters
+        };
+
+        leftArrow.addEventListener('click', () => {
+          posters.scrollBy({ left: -scrollAmount(), behavior: 'smooth' });
+        });
+
+        rightArrow.addEventListener('click', () => {
+          posters.scrollBy({ left: scrollAmount(), behavior: 'smooth' });
+        });
+      });
+    })();
+  </script>
+</body>
+</html>
